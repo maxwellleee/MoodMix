@@ -64,8 +64,6 @@ function pickRandom(arr) {
 
 /**
  * Pick a random offset in steps of 10.
- * Example: maxPages=6 -> offset ∈ {0,10,20,30,40,50}
- * Tune maxPages if you want a deeper shuffle.
  */
 function randomOffset(maxPages = 6) {
   const page = Math.floor(Math.random() * maxPages); // 0..maxPages-1
@@ -108,7 +106,7 @@ app.get("/api/mood/:mood", async (req, res) => {
     const offset = randomOffset(6); // up to ~60 results deep, in steps of 10
     const limit = 10;
 
-    // `market=US` keeps results familiar; you can remove it if you prefer global.
+    
     const url =
       `https://api.spotify.com/v1/search` +
       `?q=${encodeURIComponent(q)}` +
