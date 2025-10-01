@@ -6,13 +6,14 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
+// Allow requests from any frontend (simple for local dev)
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3333;
 
 // ─────────────────────────────
-// Token Cache (Client Credentials)
+// Client-Credentials Token Cache
 // ─────────────────────────────
 let cachedToken = null;
 let tokenExpiresAt = 0;
@@ -23,7 +24,7 @@ async function getSpotifyToken() {
 
   const id = process.env.SPOTIFY_CLIENT_ID;
   const secret = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!id || !secret) throw new Error("Missing Spotify credentials");
+  if (!id || !secret) throw new Error("Missing Spotify credentials in .env");
 
   const basic = Buffer.from(`${id}:${secret}`).toString("base64");
 
@@ -36,14 +37,12 @@ async function getSpotifyToken() {
     body: "grant_type=client_credentials",
   });
 
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Token request failed: ${resp.status} ${text}`);
-  }
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`Token request failed: ${resp.status} ${text}`);
 
-  const data = await resp.json();
+  const data = JSON.parse(text);
   cachedToken = data.access_token;
-  tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
+  tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000; // refresh early
   return cachedToken;
 }
 
@@ -62,9 +61,6 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/**
- * Pick a random offset in steps of 10.
- */
 function randomOffset(maxPages = 6) {
   const page = Math.floor(Math.random() * maxPages); // 0..maxPages-1
   return page * 10;
@@ -85,16 +81,7 @@ function formatTracks(items = []) {
 // ─────────────────────────────
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-app.get("/debug/token", async (_req, res) => {
-  try {
-    const tok = await getSpotifyToken();
-    res.json({ ok: true, token_prefix: tok.slice(0, 20) + "..." });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-// Main: Search-only mood endpoint with rotation + random offset
+// Search-only mood endpoint with rotation + random offset (no login needed)
 app.get("/api/mood/:mood", async (req, res) => {
   const mood = req.params.mood;
 
@@ -103,10 +90,9 @@ app.get("/api/mood/:mood", async (req, res) => {
 
     const queries = MOOD_TO_QUERIES[mood] || [mood || "pop"];
     const q = pickRandom(queries);
-    const offset = randomOffset(6); // up to ~60 results deep, in steps of 10
+    const offset = randomOffset(6); // steps of 10
     const limit = 10;
 
-    
     const url =
       `https://api.spotify.com/v1/search` +
       `?q=${encodeURIComponent(q)}` +
@@ -143,6 +129,8 @@ app.use((req, res) => {
   res.status(404).json({ error: "not_found", path: req.originalUrl });
 });
 
+// ─────────────────────────────
+// Start
 // ─────────────────────────────
 app.listen(PORT, () => {
   console.log(`MoodMix API running at http://localhost:${PORT}`);

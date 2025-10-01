@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>MoodMix</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <h1>MoodMix</h1>
-        <div id = "moods"></div>
-        <div id = "results"></div>
-        <script src="app.js"></script>
-    </body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MoodMix</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1>MoodMix</h1>
 
+    <!-- mood buttons will be injected here -->
+    <div id="moods"></div>
+
+    <!-- toolbar with Refresh button -->
+    <div id="toolbar">
+      <button id="refresh" aria-label="Get a fresh set">Refresh</button>
+    </div>
+
+    <!-- single results container -->
+    <div id="results" aria-live="polite" aria-busy="false"></div>
+
+    <script src="app.js"></script>
+  </body>
 </html>
